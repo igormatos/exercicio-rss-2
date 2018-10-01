@@ -5,15 +5,9 @@ import android.content.*
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
-import java.nio.charset.Charset
 import android.view.Menu
 import android.view.MenuItem
-import br.ufpe.cin.if710.rss.db.SQLiteRSSHelper
 import br.ufpe.cin.if710.rss.db.database
 import org.jetbrains.anko.*
 
@@ -110,6 +104,9 @@ class MainActivity : Activity() {
 
         val intentFilter = IntentFilter(BROADCAST_UPDATE_FEED)
         registerReceiver(receiver, intentFilter)
+
+        val notificationReceiver = NotificationReceiver()
+        registerReceiver(notificationReceiver, intentFilter)
     }
 
     private fun showDialogToAddFeed() {

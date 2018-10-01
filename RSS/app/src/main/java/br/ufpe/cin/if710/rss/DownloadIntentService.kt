@@ -37,6 +37,7 @@ class DownloadIntentService : IntentService("DownloadIntentService") {
         val newItems = ParserRSS.parse(feedXML)
         val oldItems = database.getUnreadItems()
 
+        // Só disparo o broadcast e tento salvar no banco se os novos itens forem diferentes dos existentes
         newItems.sameContentWith(oldItems)?.let {
             if (it) {
                 return
