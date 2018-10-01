@@ -78,6 +78,13 @@ class SQLiteAnkoHelper(context: Context) :
 
     }
 
+    fun markRead(item: ItemRSS) {
+        use {
+            update(ItemRSS.TABLE, ItemRSS.HAS_READ to 1)
+                    .whereArgs("${ItemRSS.LINK} = {link}", "link" to item.link)
+                    .exec()
+        }
+    }
 
     companion object {
         private var instance: SQLiteAnkoHelper? = null

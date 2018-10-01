@@ -8,6 +8,7 @@ import kotlinx.android.synthetic.main.itemlista.view.*
 import android.support.v4.content.ContextCompat.startActivity
 import android.content.Intent
 import android.net.Uri
+import br.ufpe.cin.if710.rss.db.database
 
 
 class ItemAdapter(private val list: List<ItemRSS>) : RecyclerView.Adapter<ItemAdapter.ItemViewHolder>() {
@@ -37,6 +38,9 @@ class ItemAdapter(private val list: List<ItemRSS>) : RecyclerView.Adapter<ItemAd
                 item_data.text = item.pubDate
 
                 setOnClickListener {
+                    // Mark as read
+                    it.context.database.markRead(item)
+
                     val i = Intent(Intent.ACTION_VIEW)
                     i.data = Uri.parse(item.link)
                     startActivity(it.context, i, null)
