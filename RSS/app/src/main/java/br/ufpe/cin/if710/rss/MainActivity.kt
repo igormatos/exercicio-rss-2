@@ -21,22 +21,13 @@ import org.jetbrains.anko.*
 
 class MainActivity : Activity() {
 
-    //ao fazer envio da resolucao, use este link no seu codigo!
     private lateinit var RSS_FEED: String
 
-    //OUTROS LINKS PARA TESTAR...
-    //http://rss.cnn.com/rss/edition.rss
-    //http://pox.globo.com/rss/g1/brasil/
-    //http://pox.globo.com/rss/g1/ciencia-e-saude/
-    //http://pox.globo.com/rss/g1/tecnologia/
-
-    //use ListView ao invés de TextView - deixe o atributo com o mesmo nome
     private lateinit var conteudoRSS: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
 
     private lateinit var preferences: SharedPreferences
-    private lateinit var helper: SQLiteRSSHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,10 +36,6 @@ class MainActivity : Activity() {
 
         viewManager = LinearLayoutManager(this)
         preferences = defaultSharedPreferences
-
-
-        helper = SQLiteRSSHelper(this)
-
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -58,7 +45,6 @@ class MainActivity : Activity() {
     }
 
     fun openSettingsActivity(item: MenuItem?) {
-//        Toast.makeText(this, "Teste", Toast.LENGTH_SHORT).show()
         val intent = Intent(this, SettingsActivity::class.java)
         startActivity(intent)
     }
@@ -68,8 +54,6 @@ class MainActivity : Activity() {
 
         RSS_FEED = preferences.getString("rssfeed", "")
 
-        var teste = database.getUnreadItems().count()
-
         doAsync {
             try {
 
@@ -77,18 +61,10 @@ class MainActivity : Activity() {
                     uiThread {
                         showDialogToAddFeed()
                     }
-
                     return@doAsync
                 }
 
-                val feedXML = getRssFeed(RSS_FEED)
-
-                val list = ParserRSS.parse(feedXML)
-                list.forEach {
-                    database.insertItem(it)
-                }
-
-                viewAdapter = ItemAdapter(list)
+                setAdapter()
 
                 uiThread {
                     conteudoRSS.apply {
@@ -106,36 +82,20 @@ class MainActivity : Activity() {
 
     }
 
-    fun showDialogToAddFeed() {
+    private fun setAdapter() {
+        val items = getUnreadItems()
+        viewAdapter = ItemAdapter(items)
+    }
+
+    private fun getUnreadItems() : List<ItemRSS> {
+        return database.getUnreadItems()
+    }
+
+    private fun showDialogToAddFeed() {
         alert("Deseja adicionar um feed RSS?", "Ops, nenhum feed adicionado :(") {
             yesButton { openSettingsActivity(null) }
             noButton {}
         }.show()
     }
 
-
-    @Throws(IOException::class)
-    private fun getRssFeed(feed: String): String {
-        var `in`: InputStream? = null
-        var rssFeed = ""
-        try {
-            val url = URL(feed)
-            val conn = url.openConnection() as HttpURLConnection
-            `in` = conn.inputStream
-            val out = ByteArrayOutputStream()
-            val buffer = ByteArray(1024)
-            var count = `in`!!.read(buffer)
-
-            while (count != -1) {
-                out.write(buffer, 0, count)
-
-                count = `in`.read(buffer)
-            }
-            val response = out.toByteArray()
-            rssFeed = String(response, Charset.forName("UTF-8"))
-        } finally {
-            `in`?.close()
-        }
-        return rssFeed
-    }
 }
