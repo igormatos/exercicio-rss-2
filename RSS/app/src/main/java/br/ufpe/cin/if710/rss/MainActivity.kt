@@ -14,6 +14,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.view.Menu
 import android.view.MenuItem
+import br.ufpe.cin.if710.rss.db.SQLiteRSSHelper
+import br.ufpe.cin.if710.rss.db.database
 import org.jetbrains.anko.*
 
 
@@ -34,6 +36,7 @@ class MainActivity : Activity() {
     private lateinit var viewManager: RecyclerView.LayoutManager
 
     private lateinit var preferences: SharedPreferences
+    private lateinit var helper: SQLiteRSSHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +45,9 @@ class MainActivity : Activity() {
 
         viewManager = LinearLayoutManager(this)
         preferences = defaultSharedPreferences
+
+
+        helper = SQLiteRSSHelper(this)
 
     }
 
@@ -62,15 +68,14 @@ class MainActivity : Activity() {
 
         RSS_FEED = preferences.getString("rssfeed", "")
 
+        var teste = database.getUnreadItems().count()
+
         doAsync {
             try {
 
                 if (RSS_FEED.isEmpty()) {
                     uiThread {
-                        alert("Deseja adicionar um feed RSS?", "Ops, nenhum feed adicionado :(") {
-                            yesButton { openSettingsActivity(null) }
-                            noButton {}
-                        }.show()
+                        showDialogToAddFeed()
                     }
 
                     return@doAsync
@@ -79,6 +84,9 @@ class MainActivity : Activity() {
                 val feedXML = getRssFeed(RSS_FEED)
 
                 val list = ParserRSS.parse(feedXML)
+                list.forEach {
+                    database.insertItem(it)
+                }
 
                 viewAdapter = ItemAdapter(list)
 
@@ -98,7 +106,14 @@ class MainActivity : Activity() {
 
     }
 
-    //Opcional - pesquise outros meios de obter arquivos da internet - bibliotecas, etc.
+    fun showDialogToAddFeed() {
+        alert("Deseja adicionar um feed RSS?", "Ops, nenhum feed adicionado :(") {
+            yesButton { openSettingsActivity(null) }
+            noButton {}
+        }.show()
+    }
+
+
     @Throws(IOException::class)
     private fun getRssFeed(feed: String): String {
         var `in`: InputStream? = null
