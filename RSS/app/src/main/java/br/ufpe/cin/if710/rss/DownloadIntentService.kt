@@ -28,16 +28,28 @@ class DownloadIntentService : IntentService("DownloadIntentService") {
     }
 
     private fun downloadFeed() {
-        val rss_feed = defaultSharedPreferences.getString("rssfeed", "")
+        val rssfeed = defaultSharedPreferences.getString("rssfeed", "")
 
-        if (rss_feed.isEmpty()) return
+        if (rssfeed.isEmpty()) return
 
-        val feedXML = getRssFeed(rss_feed)
+        val feedXML = getRssFeed(rssfeed)
 
-        val list = ParserRSS.parse(feedXML)
-        list.forEach {
-            database.insertItem(it)
+        val newItems = ParserRSS.parse(feedXML)
+        val oldItems = database.getUnreadItems()
+
+        newItems.sameContentWith(oldItems)?.let {
+            if (it) {
+                return
+            }
+
+            newItems.forEach {
+                database.insertItem(it)
+            }
+
+            val intent = Intent(BROADCAST_UPDATE_FEED)
+            sendBroadcast(intent)
         }
+
     }
 
     @Throws(IOException::class)

@@ -1,6 +1,7 @@
 package br.ufpe.cin.if710.rss
 
 import android.app.Activity
+import android.content.*
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -10,8 +11,6 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.Charset
-import android.content.Intent
-import android.content.SharedPreferences
 import android.view.Menu
 import android.view.MenuItem
 import br.ufpe.cin.if710.rss.db.SQLiteRSSHelper
@@ -36,6 +35,9 @@ class MainActivity : Activity() {
 
         viewManager = LinearLayoutManager(this)
         preferences = defaultSharedPreferences
+        viewAdapter = ItemAdapter(listOf())
+
+        setBroadcastReceiver()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -49,6 +51,11 @@ class MainActivity : Activity() {
         startActivity(intent)
     }
 
+    fun refreshList(item: MenuItem?) {
+        setAdapter()
+        updateRecyclerView()
+    }
+
     override fun onStart() {
         super.onStart()
 
@@ -58,27 +65,20 @@ class MainActivity : Activity() {
             try {
 
                 if (RSS_FEED.isEmpty()) {
-                    uiThread {
-                        showDialogToAddFeed()
-                    }
+                    uiThread { showDialogToAddFeed() }
                     return@doAsync
                 }
 
                 setAdapter()
 
                 uiThread {
-                    conteudoRSS.apply {
-                        setHasFixedSize(true)
-                        layoutManager = viewManager
-                        adapter = viewAdapter
-                    }
+                   updateRecyclerView()
                 }
 
             } catch (e: IOException) {
                 e.printStackTrace()
             }
         }
-
 
     }
 
@@ -89,6 +89,27 @@ class MainActivity : Activity() {
 
     private fun getUnreadItems() : List<ItemRSS> {
         return database.getUnreadItems()
+    }
+
+    private fun updateRecyclerView() {
+        conteudoRSS.apply {
+            setHasFixedSize(true)
+            layoutManager = viewManager
+            adapter = viewAdapter
+        }
+    }
+    private fun setBroadcastReceiver() {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, it: Intent?) {
+                if (it?.action == BROADCAST_UPDATE_FEED) {
+                    setAdapter()
+                    updateRecyclerView()
+                }
+            }
+        }
+
+        val intentFilter = IntentFilter(BROADCAST_UPDATE_FEED)
+        registerReceiver(receiver, intentFilter)
     }
 
     private fun showDialogToAddFeed() {

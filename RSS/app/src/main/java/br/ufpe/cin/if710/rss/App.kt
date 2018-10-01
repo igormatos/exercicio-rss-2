@@ -6,6 +6,9 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.SystemClock
 
+const val BROADCAST_UPDATE_FEED = "feedUpdate"
+const val BROADCAST_SHOW_NOTIFICATION = "showNotification"
+
 class App : Application() {
 
     override fun onCreate() {
@@ -24,7 +27,7 @@ class App : Application() {
         alarmManager.setRepeating(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
                 SystemClock.elapsedRealtime(),
-                AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+                5000,
                 alarmIntent
         )
     }
