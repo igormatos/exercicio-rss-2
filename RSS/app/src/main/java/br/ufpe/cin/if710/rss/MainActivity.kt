@@ -4,15 +4,18 @@ import android.app.Activity
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.widget.TextView
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.uiThread
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.Charset
+import android.content.Intent
+import android.content.SharedPreferences
+import android.view.Menu
+import android.view.MenuItem
+import org.jetbrains.anko.*
+
 
 class MainActivity : Activity() {
 
@@ -30,6 +33,7 @@ class MainActivity : Activity() {
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
 
+    private lateinit var preferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,14 +41,41 @@ class MainActivity : Activity() {
         conteudoRSS = findViewById(R.id.conteudoRSS)
 
         viewManager = LinearLayoutManager(this)
-        RSS_FEED = getString(R.string.rssfeed)
+        preferences = defaultSharedPreferences
+
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    fun openSettingsActivity(item: MenuItem?) {
+//        Toast.makeText(this, "Teste", Toast.LENGTH_SHORT).show()
+        val intent = Intent(this, SettingsActivity::class.java)
+        startActivity(intent)
     }
 
     override fun onStart() {
         super.onStart()
 
+        RSS_FEED = preferences.getString("rssfeed", "")
+
         doAsync {
             try {
+
+                if (RSS_FEED.isEmpty()) {
+                    uiThread {
+                        alert("Deseja adicionar um feed RSS?", "Ops, nenhum feed adicionado :(") {
+                            yesButton { openSettingsActivity(null) }
+                            noButton {}
+                        }.show()
+                    }
+
+                    return@doAsync
+                }
+
                 val feedXML = getRssFeed(RSS_FEED)
 
                 val list = ParserRSS.parse(feedXML)
